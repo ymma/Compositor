@@ -56,7 +56,7 @@ struct JPEGExportSheet: View {
                     ProgressView().padding().background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
                 }
             }.frame(width: JPEGPreview.frame.width, height: JPEGPreview.frame.height).clipped()
-                .help("Drag or scroll to move around; double-click switches between Fit and 100%")
+                .help("Scroll to move around; double-click switches between Fit and 100%")
             HStack {
                 Text("Quality")
                 Slider(value: $options.quality, in: 0...1, step: 0.01)
@@ -135,9 +135,6 @@ struct JPEGPreview: View {
     let pixelHeight: Int
     @Binding var zoom: Double?
     @Environment(\.displayScale) private var displayScale
-    @State private var position = ScrollPosition()
-    @State private var offset = CGPoint.zero
-    @State private var dragStart: CGPoint?
 
     /// The zoom at which the whole image fits `frame`.
     static func fitZoom(width: Int, height: Int, in frame: CGSize, displayScale: CGFloat) -> Double {
@@ -159,20 +156,7 @@ struct JPEGPreview: View {
                         .frame(width: size.width, height: size.height)
                         .frame(minWidth: geometry.size.width, minHeight: geometry.size.height)
                 }
-                .scrollIndicators(.visible)
-                .scrollPosition($position)
-                .onScrollGeometryChange(for: CGPoint.self, of: { $0.contentOffset }) { _, new in offset = new }
-                .gesture(DragGesture(minimumDistance: 1)
-                    .onChanged { drag in
-                        let start = dragStart ?? offset
-                        dragStart = start
-                        position.scrollTo(point: CGPoint(x: start.x - drag.translation.width, y: start.y - drag.translation.height))
-                    }
-                    .onEnded { _ in dragStart = nil })
                 .onTapGesture(count: 2) { self.zoom = nil }
-                .onAppear { keepCentered(from: nil, to: zoom, in: geometry.size) }
-                .onChange(of: zoom) { old, new in keepCentered(from: old, to: new, in: geometry.size) }
-                .pointerStyle(dragStart == nil ? .grabIdle : .grabActive)
             } else {
                 Image(decorative: image, scale: 1).resizable().interpolation(.high).scaledToFit()
                     .frame(width: geometry.size.width, height: geometry.size.height)
@@ -185,20 +169,5 @@ struct JPEGPreview: View {
     /// The image's size on screen at `zoom`, in points.
     private func shownSize(_ zoom: Double) -> CGSize {
         CGSize(width: CGFloat(pixelWidth) / max(1, displayScale) * zoom, height: CGFloat(pixelHeight) / max(1, displayScale) * zoom)
-    }
-
-    /// Zooming keeps the middle of the view on the same part of the image; coming from Fit, it starts at the center.
-    private func keepCentered(from old: Double?, to new: Double?, in view: CGSize) {
-        guard let new else { return }
-        let size = shownSize(new)
-        var middle = CGPoint(x: size.width / 2, y: size.height / 2)
-        if let old {
-            let before = shownSize(old)
-            let fx = before.width > 0 ? (offset.x + min(view.width, before.width) / 2) / before.width : 0.5
-            let fy = before.height > 0 ? (offset.y + min(view.height, before.height) / 2) / before.height : 0.5
-            middle = CGPoint(x: fx * size.width, y: fy * size.height)
-        }
-        position.scrollTo(point: CGPoint(x: min(max(0, middle.x - view.width / 2), max(0, size.width - view.width)),
-                                         y: min(max(0, middle.y - view.height / 2), max(0, size.height - view.height))))
     }
 }

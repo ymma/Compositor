@@ -22,6 +22,10 @@ import QuartzCore
         let id: ObjectIdentifier
         let level: Int
     }
+    private struct TileKey: Hashable {
+        let x: Int
+        let y: Int
+    }
     private struct Entry {
         /// Held so the identifier can't be reused by another object while the texture is kept.
         let source: AnyObject
@@ -40,7 +44,7 @@ import QuartzCore
     private final class StrokeTexture {
         let texture: MTLTexture
         let image: CIImage
-        var written: [CGPoint: ObjectIdentifier] = [:]
+        var written: [TileKey: ObjectIdentifier] = [:]
         init(texture: MTLTexture, image: CIImage) {
             self.texture = texture
             self.image = image
@@ -156,7 +160,8 @@ import QuartzCore
         strokes[id] = (stroke, entry, frame)
         let writes = TileWrites(renderer: self, into: entry.texture, mask: stroke.isMask)
         for patch in stroke.patches {
-            let key = patch.rect.origin, identity = ObjectIdentifier(patch.image)
+            let key = TileKey(x: Int(patch.rect.minX), y: Int(patch.rect.minY))
+            let identity = ObjectIdentifier(patch.image)
             guard entry.written[key] != identity else { continue }
             if writes.place(patch.image, at: patch.rect) { entry.written[key] = identity }
         }
