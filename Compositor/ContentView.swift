@@ -352,7 +352,6 @@ private struct PanelResizeEdge: View {
     var body: some View {
         Divider().overlay {
             Color.clear.frame(width: 8).contentShape(Rectangle())
-                .pointerStyle(.columnResize)
                 .gesture(DragGesture(minimumDistance: 1, coordinateSpace: .global)
                     .onChanged { value in
                         let start = startWidth ?? width
