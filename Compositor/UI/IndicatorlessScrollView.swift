@@ -17,7 +17,7 @@ struct IndicatorlessScrollView<Content: View>: NSViewRepresentable {
     }
 }
 
-private final class IndicatorlessScrollContainer: NSScrollView {
+final class IndicatorlessScrollContainer: NSScrollView {
     let host: NSHostingView<AnyView>
 
     init(rootView: AnyView) {
